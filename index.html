@@ -6,13 +6,7 @@
     <title>The Ndambuki Family Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS for Excel Import Support -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
-    <!-- Firebase SDKs for Real-Time Cloud Sync -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
     <style>
         :root {
             --earth-dark: #4A3525;
@@ -51,8 +45,8 @@
         .search-box input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.8rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem; outline: none; background: #FAF8F5; }
         .search-box input:focus { background: white; border-color: var(--earth-dark); }
 
-        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; width: 100%; sm:width: auto; }
-        .btn { background: var(--earth-dark); color: white; border: none; padding: 0.75rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem; flex: 1; sm:flex: none; }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .btn { background: var(--earth-dark); color: white; border: none; padding: 0.75rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem; }
         .btn:hover { background: var(--earth-hover); }
         .btn-secondary { background: var(--earth-accent); color: var(--earth-dark); }
 
@@ -87,7 +81,7 @@
         .form-control { width: 100%; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem; background: #FAF8F5; outline: none; }
         .form-control:focus { background: white; border-color: var(--earth-dark); }
 
-        #syncToast { position: fixed; bottom: 15px; right: 15px; background: var(--earth-dark); color: var(--earth-accent); padding: 0.6rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 2000; align-items: center; gap: 0.4rem; border: 1px solid var(--earth-accent); }
+        #saveToast { position: fixed; bottom: 15px; right: 15px; background: var(--earth-dark); color: var(--earth-accent); padding: 0.6rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 2000; align-items: center; gap: 0.4rem; border: 1px solid var(--earth-accent); }
 
         footer { text-align: center; padding: 2.5rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-light); margin-top: 3rem; background: var(--surface-white); }
     </style>
@@ -96,7 +90,7 @@
 
     <header>
         <h1>The Ndambuki Family</h1>
-        <p>Real-Time Mobile Portal • Generations 1 to 5</p>
+        <p>Mobile Portal • Generations 1 to 5</p>
     </header>
 
     <nav>
@@ -107,7 +101,6 @@
     </nav>
 
     <div class="container">
-
         <!-- DIRECTORY -->
         <div id="directory" class="section active">
             <div class="controls-bar">
@@ -127,7 +120,7 @@
         <!-- TREE -->
         <div id="tree" class="section">
             <div class="controls-bar">
-                <h3 style="font-family: 'Cinzel', serif; font-size: 1rem; color: var(--earth-dark);">Multi-Generational Hierarchy</h3>
+                <h3 style="font-family: 'Cinzel', serif; font-size: 1rem; color: var(--earth-dark);">Hierarchy Tree</h3>
                 <button class="btn btn-secondary" onclick="exportData()"><i class="fa-solid fa-download"></i> Backup</button>
             </div>
             <div class="tree-container" id="treeContainer"></div>
@@ -154,7 +147,6 @@
             </div>
             <div id="guestGrid" class="grid"></div>
         </div>
-
     </div>
 
     <!-- MEMBER MODAL -->
@@ -181,7 +173,7 @@
             </div>
             <div class="modal-body">
                 <form id="memberForm" onsubmit="saveMember(event)">
-                    <input type="hidden" id="editDocId">
+                    <input type="hidden" id="editId">
                     <div class="form-group"><label>Full Name</label><input type="text" id="fName" class="form-control" required></div>
                     <div class="form-group"><label>Generation</label>
                         <select id="fGen" class="form-control">
@@ -200,58 +192,156 @@
                     <div class="form-group"><label>Date of Death</label><input type="date" id="fDod" class="form-control"></div>
                     <div class="form-group"><label>Biography</label><textarea id="fBio" class="form-control" rows="2" placeholder="History..."></textarea></div>
                     <div class="form-group"><label>Photo</label><input type="file" id="fPhoto" class="form-control" accept="image/*"></div>
-                    <button type="submit" class="btn" style="width: 100%;">Save to Cloud</button>
+                    <button type="submit" class="btn" style="width: 100%;">Save Member</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <div id="syncToast"><i class="fa-solid fa-cloud"></i> Synced in real time</div>
+    <div id="saveToast"><i class="fa-solid fa-cloud"></i> Saved locally</div>
 
     <footer>
         <p>&copy; 2026 The Ndambuki Family Mobile Portal</p>
     </footer>
 
     <script>
-        // TODO: Replace with your actual Firebase project config credentials
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        const defaultMembers = [
+            { id: 1, generation: "Gen 1", fullName: "Benjamin Ndambuki Watuma", role: "Patriarch / Family Head", branch: "Foundational Ancestor", parents: "Foundational Lineage", spouse: "Munovi & Rebecca Ndunge", dob: "1898-01-01", dod: "1989-10-22", bio: "Foundational patriarch of the Ndambuki family." },
+            { id: 2, generation: "Gen 1", fullName: "Munovi", role: "Matriarch / Wife", branch: "Foundational Ancestor", parents: "Foundational Lineage", spouse: "Benjamin Ndambuki Watuma", dob: "", dod: "", bio: "Foundational matriarch." },
+            { id: 3, generation: "Gen 1", fullName: "Rebecca Ndunge", role: "Matriarch / Wife", branch: "Foundational Ancestor", parents: "Foundational Lineage", spouse: "Benjamin Ndambuki Watuma", dob: "", dod: "", bio: "Foundational matriarch." },
+            { id: 4, generation: "Gen 3", fullName: "Titus Mang'uu Ndambuki", role: "Branch Head", branch: "Mang'uu Branch", parents: "Benjamin Ndambuki & Rebecca Ndunge", spouse: "Rose Ngina Mang'uu", dob: "1948-02-25", dod: "2026-09-03", bio: "Branch head of Mang'uu." },
+            { id: 5, generation: "Gen 3", fullName: "Rose Ngina Mang'uu", role: "Spouse", branch: "Mang'uu Branch", parents: "Mang'uu Family", spouse: "Titus Mang'uu Ndambuki", dob: "1956-07-01", dod: "2014-02-19", bio: "Matriarch of Mang'uu." },
+            { id: 6, generation: "Gen 4", fullName: "Esther Ndunge", role: "Child", branch: "Mang'uu Branch", parents: "Titus & Rose", spouse: "Boaz Moruri Moturi", dob: "1980-11-04", dod: "", bio: "Daughter of Titus and Rose." },
+            { id: 7, generation: "Gen 4", fullName: "Boaz Moruri Moturi", role: "Spouse to Esther", branch: "Mang'uu Branch", parents: "Moruri Family", spouse: "Esther Ndunge", dob: "", dod: "", bio: "Spouse to Esther." },
+            { id: 8, generation: "Gen 5", fullName: "Ariana Kemuma Moruri", role: "Grandchild", branch: "Mang'uu Branch", parents: "Esther & Boaz", spouse: "", dob: "2009-08-23", dod: "", bio: "Grandchild." },
+            { id: 9, generation: "Gen 5", fullName: "Aleina Ngina Moruri", role: "Grandchild", branch: "Mang'uu Branch", parents: "Esther & Boaz", spouse: "", dob: "2012-07-14", dod: "", bio: "Grandchild." },
+            { id: 10, generation: "Gen 5", fullName: "Adriel Moturi Moruri", role: "Grandchild", branch: "Mang'uu Branch", parents: "Esther & Boaz", spouse: "", dob: "2016-08-07", dod: "", bio: "Grandchild." },
+            { id: 11, generation: "Gen 5", fullName: "Adelia Moruri", role: "Grandchild", branch: "Mang'uu Branch", parents: "Esther & Boaz", spouse: "", dob: "2026-07-01", dod: "", bio: "Grandchild." },
+            { id: 12, generation: "Gen 4", fullName: "Dickson Ndambuki Mang'uu", role: "Child", branch: "Mang'uu Branch", parents: "Titus & Rose", spouse: "Virginia Mbithe Mutua", dob: "1982-02-01", dod: "", bio: "Telecommunications field engineer and software developer." },
+            { id: 13, generation: "Gen 4", fullName: "Virginia Mbithe Mutua", role: "Spouse to Dickson", branch: "Mang'uu Branch", parents: "Mutua Family", spouse: "Dickson Ndambuki Mang'uu", dob: "1986-08-03", dod: "", bio: "Spouse to Dickson." },
+            { id: 14, generation: "Gen 5", fullName: "Gabriel Baraka Watuma Ndambuki", role: "Grandchild", branch: "Mang'uu Branch", parents: "Dickson & Virginia", spouse: "", dob: "2014-04-10", dod: "", bio: "Grandchild." },
+            { id: 15, generation: "Gen 5", fullName: "Tindy Ngina Ndambuki", role: "Grandchild", branch: "Mang'uu Branch", parents: "Dickson & Virginia", spouse: "", dob: "2021-01-08", dod: "", bio: "Grandchild." },
+            { id: 16, generation: "Gen 4", fullName: "Dephine Syokau", role: "Child", branch: "Mang'uu Branch", parents: "Titus & Rose", spouse: "", dob: "1985-11-09", dod: "", bio: "Daughter of Titus and Rose." },
+            { id: 17, generation: "Gen 5", fullName: "Tess Wanjiru Gathitu", role: "Grandchild", branch: "Mang'uu Branch", parents: "Dephine Syokau", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 18, generation: "Gen 5", fullName: "Valerie Ngina Gathitu", role: "Grandchild", branch: "Mang'uu Branch", parents: "Dephine Syokau", spouse: "", dob: "2011-07-17", dod: "", bio: "Grandchild." },
+            { id: 19, generation: "Gen 5", fullName: "Zack Ngugi Gathitu", role: "Grandchild", branch: "Mang'uu Branch", parents: "Dephine Syokau", spouse: "", dob: "2015-03-22", dod: "", bio: "Grandchild." },
+            { id: 20, generation: "Gen 3", fullName: "Daniel Mumo Ndambuki", role: "Branch Head", branch: "Mumo Branch", parents: "Benjamin Ndambuki & Rebecca Ndunge", spouse: "Emily Mutindi Mumo", dob: "1957-02-18", dod: "", bio: "Branch head of Mumo." },
+            { id: 21, generation: "Gen 3", fullName: "Emily Mutindi Mumo", role: "Spouse", branch: "Mumo Branch", parents: "Mumo Family", spouse: "Daniel Mumo Ndambuki", dob: "1963-09-27", dod: "", bio: "Matriarch of Mumo." },
+            { id: 22, generation: "Gen 4", fullName: "Philip Watuma Mumo", role: "Child", branch: "Mumo Branch", parents: "Daniel & Emily", spouse: "Angelina Mwamrizi", dob: "1988-01-07", dod: "", bio: "Son of Daniel and Emily." },
+            { id: 23, generation: "Gen 4", fullName: "Angelina Mwamrizi", role: "Spouse to Philip", branch: "Mumo Branch", parents: "Mwamrizi Family", spouse: "Philip Watuma Mumo", dob: "1963-03-13", dod: "", bio: "Spouse to Philip." },
+            { id: 24, generation: "Gen 5", fullName: "Ruby Watuma", role: "Grandchild", branch: "Mumo Branch", parents: "Philip & Angelina", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 25, generation: "Gen 5", fullName: "Keila Watuma", role: "Grandchild", branch: "Mumo Branch", parents: "Philip & Angelina", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 26, generation: "Gen 4", fullName: "Benjamin Tua Mumo", role: "Child", branch: "Mumo Branch", parents: "Daniel & Emily", spouse: "Hannah Muthoni", dob: "1963-07-12", dod: "", bio: "Son of Daniel and Emily." },
+            { id: 27, generation: "Gen 4", fullName: "Hannah Muthoni", role: "Spouse to Benjamin", branch: "Mumo Branch", parents: "Hannah Family", spouse: "Benjamin Tua Mumo", dob: "1994-12-02", dod: "", bio: "Spouse to Benjamin." },
+            { id: 28, generation: "Gen 5", fullName: "Melody Tua", role: "Grandchild", branch: "Mumo Branch", parents: "Benjamin & Hannah", spouse: "", dob: "2025-04-15", dod: "", bio: "Grandchild." },
+            { id: 29, generation: "Gen 4", fullName: "Dickson Ndambuki Mumo", role: "Child", branch: "Mumo Branch", parents: "Daniel & Emily", spouse: "", dob: "1964-04-24", dod: "", bio: "Son of Daniel and Emily." },
+            { id: 30, generation: "Gen 3", fullName: "David Muasya Ndambuki", role: "Branch Head", branch: "Muasya Branch", parents: "Benjamin Ndambuki & Rebecca Ndunge", spouse: "Winfred Mbula Muasya", dob: "1960-07-04", dod: "", bio: "Branch head of Muasya." },
+            { id: 31, generation: "Gen 3", fullName: "Winfred Mbula Muasya", role: "Spouse", branch: "Muasya Branch", parents: "Muasya Family", spouse: "David Muasya Ndambuki", dob: "1963-07-15", dod: "", bio: "Matriarch of Muasya." },
+            { id: 32, generation: "Gen 4", fullName: "Eva Mutete Muasya", role: "Child", branch: "Muasya Branch", parents: "David & Winfred", spouse: "", dob: "1989-05-22", dod: "", bio: "Daughter of David and Winfred." },
+            { id: 33, generation: "Gen 5", fullName: "Kyan", role: "Grandchild", branch: "Muasya Branch", parents: "Eva Mutete Muasya", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 34, generation: "Gen 4", fullName: "Mary Ndunge", role: "Child", branch: "Muasya Branch", parents: "David & Winfred", spouse: "Emmanuel Kinyanjui", dob: "1993-12-24", dod: "", bio: "Daughter of David and Winfred." },
+            { id: 35, generation: "Gen 4", fullName: "Emmanuel Kinyanjui", role: "Spouse to Mary", branch: "Muasya Branch", parents: "Kinyanjui Family", spouse: "Mary Ndunge", dob: "", dod: "", bio: "Spouse to Mary." },
+            { id: 36, generation: "Gen 5", fullName: "Riguel Kinyanjui", role: "Grandchild", branch: "Muasya Branch", parents: "Mary & Emmanuel", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 37, generation: "Gen 5", fullName: "Ciara Kinyanjui", role: "Grandchild", branch: "Muasya Branch", parents: "Mary & Emmanuel", spouse: "", dob: "2024-04-26", dod: "", bio: "Grandchild." },
+            { id: 38, generation: "Gen 4", fullName: "John Tutu", role: "Child", branch: "Muasya Branch", parents: "David & Winfred", spouse: "", dob: "2000-11-24", dod: "", bio: "Son of David and Winfred." },
+            { id: 39, generation: "Gen 3", fullName: "Esther Mwikali Muli", role: "Branch Head", branch: "Muli Branch", parents: "Benjamin Ndambuki & Rebecca Ndunge", spouse: "Simon Muli", dob: "1940-09-12", dod: "", bio: "Branch head of Muli." },
+            { id: 40, generation: "Gen 3", fullName: "Simon Muli", role: "Spouse", branch: "Muli Branch", parents: "Muli Family", spouse: "Esther Mwikali Muli", dob: "", dod: "", bio: "Spouse to Esther." },
+            { id: 41, generation: "Gen 4", fullName: "Gideon Mutava Muli", role: "Child", branch: "Muli Branch", parents: "Simon & Esther", spouse: "Martha Mutava", dob: "", dod: "", bio: "Son of Simon and Esther." },
+            { id: 42, generation: "Gen 4", fullName: "Martha Mutava", role: "Spouse to Gideon", branch: "Muli Branch", parents: "Mutava Family", spouse: "Gideon Mutava Muli", dob: "", dod: "", bio: "Spouse to Gideon." },
+            { id: 43, generation: "Gen 5", fullName: "Esther Mwikali", role: "Grandchild", branch: "Muli Branch", parents: "Gideon & Martha", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 44, generation: "Gen 5", fullName: "Kevin Mbithi", role: "Grandchild", branch: "Muli Branch", parents: "Gideon & Martha", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 45, generation: "Gen 4", fullName: "Wellington Kyalo Muli", role: "Child", branch: "Muli Branch", parents: "Simon & Esther", spouse: "Stella Wayua", dob: "", dod: "2024-01-29", bio: "Son of Simon and Esther." },
+            { id: 46, generation: "Gen 4", fullName: "Stella Wayua", role: "Spouse to Wellington", branch: "Muli Branch", parents: "Wayua Family", spouse: "Wellington Kyalo Muli", dob: "", dod: "", bio: "Spouse to Wellington." },
+            { id: 47, generation: "Gen 5", fullName: "Ben Kyalo", role: "Grandchild", branch: "Muli Branch", parents: "Wellington & Stella", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 48, generation: "Gen 5", fullName: "Grace Kyalo", role: "Grandchild", branch: "Muli Branch", parents: "Wellington & Stella", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 49, generation: "Gen 5", fullName: "Japheth Kyalo", role: "Grandchild", branch: "Muli Branch", parents: "Wellington & Stella", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 50, generation: "Gen 4", fullName: "Paul Mwalili Muli", role: "Child", branch: "Muli Branch", parents: "Simon & Esther", spouse: "Jacinta Mwalili", dob: "1964-01-01", dod: "", bio: "Son of Simon and Esther." },
+            { id: 51, generation: "Gen 4", fullName: "Jacinta Mwalili", role: "Spouse to Paul", branch: "Muli Branch", parents: "Mwalili Family", spouse: "Paul Mwalili Muli", dob: "", dod: "", bio: "Spouse to Paul." },
+            { id: 52, generation: "Gen 5", fullName: "Alex Mwalili", role: "Grandchild", branch: "Muli Branch", parents: "Paul & Jacinta", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 53, generation: "Gen 5", fullName: "Simon Ngeli Mwalili", role: "Grandchild", branch: "Muli Branch", parents: "Paul & Jacinta", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 54, generation: "Gen 5", fullName: "Daniel Mumo", role: "Grandchild", branch: "Muli Branch", parents: "Paul & Jacinta", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 55, generation: "Gen 5", fullName: "David Muthiani", role: "Grandchild", branch: "Muli Branch", parents: "Paul & Jacinta", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 56, generation: "Gen 5", fullName: "Simon Muli", role: "Grandchild", branch: "Muli Branch", parents: "Paul & Jacinta", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 57, generation: "Gen 4", fullName: "Ben Muthiani Muli", role: "Child", branch: "Muli Branch", parents: "Simon & Esther", spouse: "Carol Nzisa Muthiani", dob: "1969-09-30", dod: "", bio: "Son of Simon and Esther." },
+            { id: 58, generation: "Gen 4", fullName: "Carol Nzisa Muthiani", role: "Spouse to Ben", branch: "Muli Branch", parents: "Muthiani Family", spouse: "Ben Muthiani Muli", dob: "1975-01-01", dod: "", bio: "Spouse to Ben." },
+            { id: 59, generation: "Gen 5", fullName: "Eli Muli", role: "Grandchild", branch: "Muli Branch", parents: "Ben & Carol", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 60, generation: "Gen 5", fullName: "Eliana Mwikali", role: "Grandchild", branch: "Muli Branch", parents: "Ben & Carol", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 61, generation: "Gen 5", fullName: "Musyimi Muthiani", role: "Grandchild", branch: "Muli Branch", parents: "Ben & Carol", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 62, generation: "Gen 3", fullName: "Dephine Mbithe Usyu", role: "Branch Head", branch: "Usyu Branch", parents: "Benjamin Ndambuki & Rebecca Ndunge", spouse: "Usyu", dob: "1946-03-14", dod: "", bio: "Branch head of Usyu." },
+            { id: 63, generation: "Gen 3", fullName: "Usyu", role: "Spouse", branch: "Usyu Branch", parents: "Usyu Family", spouse: "Dephine Mbithe Usyu", dob: "", dod: "", bio: "Spouse to Dephine." },
+            { id: 64, generation: "Gen 4", fullName: "Simon Usyu", role: "Child", branch: "Usyu Branch", parents: "Dephine & Usyu", spouse: "", dob: "", dod: "", bio: "Son of Dephine and Usyu." },
+            { id: 65, generation: "Gen 4", fullName: "Shem Ndambuki Usyu", role: "Child", branch: "Usyu Branch", parents: "Dephine & Usyu", spouse: "", dob: "1964-01-19", dod: "", bio: "Son of Dephine and Usyu." },
+            { id: 66, generation: "Gen 4", fullName: "Wanzila Usyu", role: "Child", branch: "Usyu Branch", parents: "Dephine & Usyu", spouse: "", dob: "", dod: "", bio: "Child of Dephine and Usyu." },
+            { id: 67, generation: "Gen 4", fullName: "Grace Usyu", role: "Child", branch: "Usyu Branch", parents: "Dephine & Usyu", spouse: "", dob: "", dod: "", bio: "Child of Dephine and Usyu." },
+            { id: 68, generation: "Gen 4", fullName: "Muthoki Usyu", role: "Child", branch: "Usyu Branch", parents: "Dephine & Usyu", spouse: "", dob: "1964-08-12", dod: "", bio: "Child of Dephine and Usyu." },
+            { id: 69, generation: "Gen 4", fullName: "Ndunge Usyu", role: "Child", branch: "Usyu Branch", parents: "Dephine & Usyu", spouse: "", dob: "", dod: "", bio: "Child of Dephine and Usyu." },
+            { id: 70, generation: "Gen 4", fullName: "Miriam Mueni Usyu", role: "Child", branch: "Usyu Branch", parents: "Dephine & Usyu", spouse: "", dob: "2000-11-23", dod: "", bio: "Child of Dephine and Usyu." },
+            { id: 71, generation: "Gen 3", fullName: "Joseph Watuma Ndambuki", role: "Branch Head", branch: "Watuma Branch", parents: "Benjamin Ndambuki & Rebecca Ndunge", spouse: "Hellen Mutheu Watuma", dob: "", dod: "", bio: "Branch head of Watuma." },
+            { id: 72, generation: "Gen 3", fullName: "Hellen Mutheu Watuma", role: "Spouse", branch: "Watuma Branch", parents: "Watuma Family", spouse: "Joseph Watuma Ndambuki", dob: "1964-02-10", dod: "", bio: "Matriarch of Watuma." },
+            { id: 73, generation: "Gen 4", fullName: "Kennedy Ndambuki Watuma", role: "Child", branch: "Watuma Branch", parents: "Joseph & Hellen", spouse: "", dob: "1986-10-10", dod: "", bio: "Son of Joseph and Hellen." },
+            { id: 74, generation: "Gen 4", fullName: "Kevin Mulwa Watuma", role: "Child", branch: "Watuma Branch", parents: "Joseph & Hellen", spouse: "", dob: "1990-09-09", dod: "", bio: "Son of Joseph and Hellen." },
+            { id: 75, generation: "Gen 4", fullName: "Becky Mueke", role: "Child", branch: "Watuma Branch", parents: "Joseph & Hellen", spouse: "", dob: "2000-01-09", dod: "", bio: "Child of Joseph and Hellen." },
+            { id: 76, generation: "Gen 4", fullName: "Bernice Mbatha", role: "Child", branch: "Watuma Branch", parents: "Joseph & Hellen", spouse: "", dob: "2000-01-09", dod: "", bio: "Child of Joseph and Hellen." },
+            { id: 77, generation: "Gen 3", fullName: "Serah Mutunga Watuma", role: "Branch Head", branch: "Mutunga Branch", parents: "Benjamin Ndambuki & Rebecca Ndunge", spouse: "Mutunga", dob: "1942-03-19", dod: "", bio: "Branch head of Mutunga." },
+            { id: 78, generation: "Gen 3", fullName: "Mutunga", role: "Spouse", branch: "Mutunga Branch", parents: "Mutunga Family", spouse: "Serah Mutunga Watuma", dob: "", dod: "", bio: "Spouse to Serah." },
+            { id: 79, generation: "Gen 4", fullName: "Yusuf Mutunga", role: "Child", branch: "Mutunga Branch", parents: "Serah & Mutunga", spouse: "", dob: "", dod: "", bio: "Son of Serah and Mutunga." },
+            { id: 80, generation: "Gen 4", fullName: "Shem Mutunga", role: "Child", branch: "Mutunga Branch", parents: "Serah & Mutunga", spouse: "", dob: "", dod: "", bio: "Son of Serah and Mutunga." },
+            { id: 81, generation: "Gen 4", fullName: "Jane Mutunga", role: "Child", branch: "Mutunga Branch", parents: "Serah & Mutunga", spouse: "", dob: "", dod: "", bio: "Child of Serah and Mutunga." },
+            { id: 82, generation: "Gen 4", fullName: "Catherine Ndanu Mutunga", role: "Child", branch: "Mutunga Branch", parents: "Serah & Mutunga", spouse: "", dob: "", dod: "", bio: "Child of Serah and Mutunga." },
+            { id: 83, generation: "Gen 4", fullName: "Mutua Mutunga", role: "Child", branch: "Mutunga Branch", parents: "Serah & Mutunga", spouse: "", dob: "", dod: "", bio: "Child of Serah and Mutunga." },
+            { id: 84, generation: "Gen 4", fullName: "Mulwa Mutunga", role: "Child", branch: "Mutunga Branch", parents: "Serah & Mutunga", spouse: "", dob: "", dod: "", bio: "Child of Serah and Mutunga." },
+            { id: 85, generation: "Gen 3", fullName: "Sherinah Nzilani", role: "Branch Head", branch: "Sherinah Branch", parents: "Benjamin Ndambuki & Rebecca Ndunge", spouse: "Solo", dob: "", dod: "", bio: "Branch head of Sherinah." },
+            { id: 86, generation: "Gen 3", fullName: "Solo", role: "Spouse", branch: "Sherinah Branch", parents: "Solo Family", spouse: "Sherinah Nzilani", dob: "", dod: "", bio: "Spouse to Sherinah." },
+            { id: 87, generation: "Gen 4", fullName: "Hesborn Solomon", role: "Child", branch: "Sherinah Branch", parents: "Sherinah & Solo", spouse: "Rebecca Kimondio", dob: "", dod: "", bio: "Son of Sherinah and Solo." },
+            { id: 88, generation: "Gen 4", fullName: "Rebecca Kimondio", role: "Spouse to Hesborn", branch: "Sherinah Branch", parents: "Kimondio Family", spouse: "Hesborn Solomon", dob: "", dod: "", bio: "Spouse to Hesborn." },
+            { id: 89, generation: "Gen 5", fullName: "Sherinah", role: "Grandchild", branch: "Sherinah Branch", parents: "Hesborn & Rebecca", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 90, generation: "Gen 5", fullName: "Ndanu", role: "Grandchild", branch: "Sherinah Branch", parents: "Hesborn & Rebecca", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 91, generation: "Gen 5", fullName: "Hesborn Jnr", role: "Grandchild", branch: "Sherinah Branch", parents: "Hesborn & Rebecca", spouse: "", dob: "2025-06-01", dod: "", bio: "Grandchild." },
+            { id: 92, generation: "Gen 3", fullName: "Josephine Kaswii", role: "Branch Head", branch: "Kaswii Branch", parents: "Benjamin Ndambuki & Rebecca Ndunge", spouse: "", dob: "", dod: "", bio: "Branch head of Kaswii." },
+            { id: 93, generation: "Gen 4", fullName: "Darius Ndambuki", role: "Child", branch: "Kaswii Branch", parents: "Josephine Kaswii", spouse: "", dob: "1972-12-30", dod: "", bio: "Son of Josephine Kaswii." },
+            { id: 94, generation: "Gen 3", fullName: "Florence Mutete Ndambuki", role: "Branch Head", branch: "Mutete Branch", parents: "Benjamin Ndambuki & Rebecca Ndunge", spouse: "", dob: "1965-03-22", dod: "", bio: "Branch head of Mutete." },
+            { id: 95, generation: "Gen 4", fullName: "Dephine Ndunge Mutete", role: "Child", branch: "Mutete Branch", parents: "Florence Mutete", spouse: "", dob: "", dod: "", bio: "Daughter of Florence Mutete." },
+            { id: 96, generation: "Gen 5", fullName: "Amara Mutete", role: "Grandchild", branch: "Mutete Branch", parents: "Dephine Ndunge Mutete", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 97, generation: "Gen 5", fullName: "A. Mutete", role: "Grandchild", branch: "Mutete Branch", parents: "Dephine Ndunge Mutete", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 98, generation: "Gen 3", fullName: "Janet Nduume Ndambuki", role: "Branch Head", branch: "Nduume Branch", parents: "Benjamin Ndambuki & Rebecca Ndunge", spouse: "", dob: "1951-01-01", dod: "2024-12-09", bio: "Branch head of Nduume." },
+            { id: 99, generation: "Gen 4", fullName: "Dennis Ndambuki", role: "Child", branch: "Nduume Branch", parents: "Janet Nduume", spouse: "Catherine Mutunga", dob: "1975-03-14", dod: "", bio: "Son of Janet Nduume." },
+            { id: 100, generation: "Gen 4", fullName: "Catherine Mutunga", role: "Spouse to Dennis", branch: "Nduume Branch", parents: "Mutunga Family", spouse: "Dennis Ndambuki", dob: "", dod: "", bio: "Spouse to Dennis." },
+            { id: 101, generation: "Gen 5", fullName: "Emma Wanza", role: "Grandchild", branch: "Nduume Branch", parents: "Dennis & Catherine", spouse: "", dob: "1997-11-06", dod: "", bio: "Grandchild." },
+            { id: 102, generation: "Gen 5", fullName: "Brian Ndambuki", role: "Grandchild", branch: "Nduume Branch", parents: "Dennis & Catherine", spouse: "", dob: "", dod: "", bio: "Grandchild." },
+            { id: 103, generation: "Gen 3", fullName: "Aaron Mutwiwa", role: "Branch Head", branch: "Aaron Branch", parents: "Benjamin Ndambuki & Munovi", spouse: "Veronica Mutwiwa", dob: "", dod: "", bio: "Branch head of Aaron." },
+            { id: 104, generation: "Gen 3", fullName: "Veronica Mutwiwa", role: "Spouse", branch: "Aaron Branch", parents: "Mutwiwa Family", spouse: "Aaron Mutwiwa", dob: "", dod: "", bio: "Spouse to Aaron." },
+            { id: 105, generation: "Gen 4", fullName: "Benjamin Mutua", role: "Child", branch: "Aaron Branch", parents: "Aaron & Veronica", spouse: "", dob: "", dod: "", bio: "Son of Aaron and Veronica." },
+            { id: 106, generation: "Gen 4", fullName: "Koki Mutwiwa", role: "Child", branch: "Aaron Branch", parents: "Aaron & Veronica", spouse: "", dob: "", dod: "", bio: "Child of Aaron and Veronica." },
+            { id: 107, generation: "Gen 3", fullName: "Sammy Musyoki", role: "Branch Head", branch: "Sammy Branch", parents: "Benjamin Ndambuki & Munovi", spouse: "Serah Nthenya Musyoki", dob: "", dod: "", bio: "Branch head of Sammy." },
+            { id: 108, generation: "Gen 3", fullName: "Serah Nthenya Musyoki", role: "Spouse", branch: "Sammy Branch", parents: "Musyoki Family", spouse: "Sammy Musyoki", dob: "1938-01-01", dod: "2026-05-10", bio: "Spouse to Sammy." },
+            { id: 109, generation: "Gen 4", fullName: "Micheal Watuma Musyoki", role: "Child", branch: "Sammy Branch", parents: "Sammy & Serah", spouse: "", dob: "", dod: "", bio: "Son of Sammy and Serah." },
+            { id: 110, generation: "Gen 3", fullName: "Rhoda Muo", role: "Branch Head", branch: "Rhoda Branch", parents: "Benjamin Ndambuki & Munovi", spouse: "", dob: "", dod: "", bio: "Branch head of Rhoda." },
+            { id: 111, generation: "Gen 4", fullName: "Nelson Mutisya Muuo", role: "Child", branch: "Rhoda Branch", parents: "Rhoda Muo", spouse: "", dob: "", dod: "", bio: "Child of Rhoda Muo." },
+            { id: 112, generation: "Gen 4", fullName: "Peter", role: "Child", branch: "Rhoda Branch", parents: "Rhoda Muo", spouse: "", dob: "", dod: "", bio: "Child of Rhoda Muo." },
+            { id: 113, generation: "Gen 4", fullName: "Maundu", role: "Child", branch: "Rhoda Branch", parents: "Rhoda Muo", spouse: "", dob: "", dod: "", bio: "Child of Rhoda Muo." },
+            { id: 114, generation: "Gen 4", fullName: "Mumbua", role: "Child", branch: "Rhoda Branch", parents: "Rhoda Muo", spouse: "", dob: "", dod: "", bio: "Child of Rhoda Muo." },
+            { id: 115, generation: "Gen 4", fullName: "Mary", role: "Child", branch: "Rhoda Branch", parents: "Rhoda Muo", spouse: "", dob: "", dod: "", bio: "Child of Rhoda Muo." },
+            { id: 116, generation: "Gen 4", fullName: "Annah Kithuka", role: "Child", branch: "Rhoda Branch", parents: "Rhoda Muo", spouse: "", dob: "", dod: "", bio: "Child of Rhoda Muo." }
+        ];
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        let members = defaultMembers;
+        try {
+            const saved = localStorage.getItem('ndambuki_members_v9');
+            if (saved) members = JSON.parse(saved);
+        } catch(e) {}
 
-        let members = [];
-        let guestbook = [];
+        let guestbook = JSON.parse(localStorage.getItem('ndambuki_guestbook_v9')) || [
+            { name: "Dickson Ndambuki", msg: "Welcome to our family portal!", date: "2026-10-21" }
+        ];
 
-        // Real-time listener for Members collection
-        db.collection("members").onSnapshot((snapshot) => {
-            members = [];
-            snapshot.forEach((doc) => {
-                members.push({ docId: doc.id, ...doc.data() });
-            });
-            renderDirectory();
-            if(document.getElementById('tree').classList.contains('active')) renderTree();
-            if(document.getElementById('roots').classList.contains('active')) renderRoots();
-            showSyncToast();
-        });
+        function saveData() {
+            localStorage.setItem('ndambuki_members_v9', JSON.stringify(members));
+            localStorage.setItem('ndambuki_guestbook_v9', JSON.stringify(guestbook));
+            showToast();
+        }
 
-        // Real-time listener for Guestbook collection
-        db.collection("guestbook").orderBy("date", "desc").onSnapshot((snapshot) => {
-            guestbook = [];
-            snapshot.forEach((doc) => {
-                guestbook.push(doc.data());
-            });
-            if(document.getElementById('guestbook').classList.contains('active')) renderGuest();
-        });
-
-        function showSyncToast() {
-            const toast = document.getElementById('syncToast');
+        function showToast() {
+            const toast = document.getElementById('saveToast');
             toast.style.display = 'flex';
             setTimeout(() => toast.style.display = 'none', 2000);
         }
@@ -270,14 +360,10 @@
         function renderDirectory(list = members) {
             const grid = document.getElementById('familyGrid');
             grid.innerHTML = '';
-            if(list.length === 0) {
-                grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">Loading family members or database empty...</p>`;
-                return;
-            }
             list.forEach(m => {
                 const card = document.createElement('div');
                 card.className = 'card';
-                card.onclick = () => openMember(m.docId);
+                card.onclick = () => openMember(m.id);
                 card.innerHTML = `
                     <div class="card-img">
                         ${m.photo ? `<img src="${m.photo}" alt="${m.fullName}">` : `<i class="fa-solid fa-user"></i>`}
@@ -289,8 +375,8 @@
                             <div class="card-sub">${m.role || 'Member'} • ${m.branch || 'General'}</div>
                             <div class="card-meta">
                                 <div><b>Parents:</b> ${m.parents || 'N/A'}</div>
-                                ${m.dob ? `<div><b>Born:</b> \${m.dob}</div>` : ''}
-                                ${m.dod ? `<div style="color: #c5221f;"><b>Passed:</b> \${m.dod}</div>` : ''}
+                                ${m.dob ? `<div><b>Born:</b> ${m.dob}</div>` : ''}
+                                ${m.dod ? `<div style="color: #c5221f;"><b>Passed:</b> ${m.dod}</div>` : ''}
                             </div>
                         </div>
                         <div style="margin-top: 0.8rem; color: var(--earth-dark); font-size: 0.8rem; font-weight: 600;">View Profile &rarr;</div>
@@ -306,8 +392,7 @@
                 m.fullName.toLowerCase().includes(q) || 
                 (m.branch && m.branch.toLowerCase().includes(q)) ||
                 (m.role && m.role.toLowerCase().includes(q)) ||
-                (m.generation && m.generation.toLowerCase().includes(q)) ||
-                (m.parents && m.parents.toLowerCase().includes(q))
+                (m.generation && m.generation.toLowerCase().includes(q))
             );
             renderDirectory(filtered);
         }
@@ -326,7 +411,7 @@
                 genMembers.forEach(m => {
                     const node = document.createElement('div');
                     node.className = 'tree-node';
-                    node.onclick = () => openMember(m.docId);
+                    node.onclick = () => openMember(m.id);
                     node.innerHTML = `
                         <h4 style="font-size:0.9rem; font-weight:700;">${m.fullName}</h4>
                         <p style="font-size:0.75rem; color:var(--text-muted);">${m.branch || ''}</p>
@@ -366,57 +451,51 @@
             e.preventDefault();
             const name = document.getElementById('gName').value;
             const msg = document.getElementById('gMsg').value;
-            db.collection("guestbook").add({
-                name, msg, date: new Date().toISOString().split('T')[0]
-            }).then(() => {
-                document.getElementById('gName').value = '';
-                document.getElementById('gMsg').value = '';
-            });
+            guestbook.unshift({ name, msg, date: new Date().toISOString().split('T')[0] });
+            saveData();
+            renderGuest();
+            document.getElementById('gName').value = '';
+            document.getElementById('gMsg').value = '';
         }
 
-        function openMember(docId) {
-            const m = members.find(item => item.docId === docId);
+        function openMember(id) {
+            const m = members.find(item => item.id === id);
             if(!m) return;
             document.getElementById('mModalTitle').innerText = m.fullName;
             const children = members.filter(item => item.parents && item.parents.toLowerCase().includes(m.fullName.toLowerCase().split(' ')[0]));
 
             document.getElementById('mModalBody').innerHTML = `
                 <div style="text-align: center; margin-bottom: 1rem;">
-                    ${m.photo ? `<img src="\${m.photo}" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid var(--earth-dark);" alt="\${m.fullName}">` : `<div style="font-size: 2.5rem; color: var(--earth-dark);"><i class="fa-solid fa-user-circle"></i></div>`}
+                    ${m.photo ? `<img src="${m.photo}" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid var(--earth-dark);" alt="${m.fullName}">` : `<div style="font-size: 2.5rem; color: var(--earth-dark);"><i class="fa-solid fa-user-circle"></i></div>`}
                 </div>
                 <p><b>Generation:</b> ${m.generation}</p>
                 <p><b>Branch:</b> ${m.branch || 'N/A'}</p>
                 <p><b>Role:</b> ${m.role || 'Member'}</p>
                 <p><b>Parents:</b> ${m.parents || 'N/A'}</p>
                 <p><b>Spouse:</b> ${m.spouse || 'N/A'}</p>
-                ${m.dob ? `<p><b>Born:</b> \${m.dob}</p>` : ''}
-                ${m.dod ? `<p style="color: #c5221f;"><b>Passed:</b> \${m.dod}</p>` : ''}
+                ${m.dob ? `<p><b>Born:</b> ${m.dob}</p>` : ''}
+                ${m.dod ? `<p style="color: #c5221f;"><b>Passed:</b> ${m.dod}</p>` : ''}
                 <hr style="margin: 0.8rem 0; border:0; border-top:1px solid var(--border-light);">
                 <h4 style="font-family: 'Cinzel', serif; font-size:0.95rem; font-weight:700; color:var(--earth-dark);">Biography</h4>
                 <p style="background: #FAF8F5; padding: 0.8rem; border-radius: 6px; margin-top: 0.4rem; font-size:0.9rem;">${m.bio || 'No biography written yet.'}</p>
-                
-                ${children.length > 0 ? `
-                    <h4 style="font-family: 'Cinzel', serif; font-size:0.95rem; font-weight:700; color:var(--earth-dark); margin-top: 0.8rem;">Children (\${children.length})</h4>
-                    <ul style="padding-left: 1.2rem; margin-top: 0.2rem; font-size: 0.9rem;">\${children.map(c => `<li><a href="#" onclick="openMember('${c.docId}'); return false;">${c.fullName}</a></li>`).join('')}</ul>
-                ` : ''}
             `;
-            document.getElementById('mEditBtn').onclick = () => openEdit(m.docId);
+            document.getElementById('mEditBtn').onclick = () => openEdit(m.id);
             document.getElementById('memberModal').classList.add('active');
         }
 
         function openAddModal() {
             document.getElementById('fModalTitle').innerText = "Add Family Member";
             document.getElementById('memberForm').reset();
-            document.getElementById('editDocId').value = '';
+            document.getElementById('editId').value = '';
             document.getElementById('formModal').classList.add('active');
         }
 
-        function openEdit(docId) {
+        function openEdit(id) {
             closeModal('memberModal');
-            const m = members.find(item => item.docId === docId);
+            const m = members.find(item => item.id === id);
             if(!m) return;
             document.getElementById('fModalTitle').innerText = "Edit Member";
-            document.getElementById('editDocId').value = m.docId;
+            document.getElementById('editId').value = m.id;
             document.getElementById('fName').value = m.fullName || '';
             document.getElementById('fGen').value = m.generation || 'Gen 3';
             document.getElementById('fBranch').value = m.branch || '';
@@ -431,11 +510,12 @@
 
         function saveMember(e) {
             e.preventDefault();
-            const docId = document.getElementById('editDocId').value;
+            const id = document.getElementById('editId').value;
             const fileInput = document.getElementById('fPhoto');
 
-            const saveToFirestore = (photoUrl) => {
+            const save = (photoUrl) => {
                 const data = {
+                    id: id ? parseInt(id) : Date.now(),
                     fullName: document.getElementById('fName').value,
                     generation: document.getElementById('fGen').value,
                     branch: document.getElementById('fBranch').value,
@@ -445,26 +525,27 @@
                     dob: document.getElementById('fDob').value,
                     dod: document.getElementById('fDod').value,
                     bio: document.getElementById('fBio').value,
-                    photo: photoUrl || (docId ? members.find(m => m.docId == docId).photo : null)
+                    photo: photoUrl || (id ? members.find(m => m.id == id).photo : null)
                 };
 
-                if(docId) {
-                    db.collection("members").doc(docId).update(data).then(() => {
-                        closeModal('formModal');
-                    });
+                if(id) {
+                    const idx = members.findIndex(m => m.id == id);
+                    if(idx !== -1) members[idx] = data;
                 } else {
-                    db.collection("members").add(data).then(() => {
-                        closeModal('formModal');
-                    });
+                    members.push(data);
                 }
+
+                saveData();
+                closeModal('formModal');
+                renderDirectory();
             };
 
             if(fileInput.files && fileInput.files[0]) {
                 const reader = new FileReader();
-                reader.onload = (e) => saveToFirestore(e.target.result);
+                reader.onload = (e) => save(e.target.result);
                 reader.readAsDataURL(fileInput.files[0]);
             } else {
-                saveToFirestore(null);
+                save(null);
             }
         }
 
@@ -480,24 +561,22 @@
                     const worksheet = workbook.Sheets[firstSheet];
                     const jsonRows = XLSX.utils.sheet_to_json(worksheet);
 
-                    const batch = db.batch();
-                    jsonRows.forEach((row) => {
-                        const ref = db.collection("members").doc();
-                        batch.set(ref, {
-                            generation: row['Generation'] || 'Gen 3',
-                            fullName: row['Full Name'] || 'Unknown',
-                            role: row['Role / Relationship'] || 'Member',
-                            branch: row['Branch'] || 'General',
-                            parents: row['Parents'] || '',
-                            spouse: row['Spouse'] || '',
-                            dob: row['Date of Birth'] || '',
-                            dod: row['Death Date'] || '',
-                            bio: `Imported from Excel backup.`
-                        });
-                    });
-                    batch.commit().then(() => {
-                        alert(`Successfully imported ${jsonRows.length} members to Firebase Cloud in real time!`);
-                    });
+                    members = jsonRows.map((row, index) => ({
+                        id: row['ID'] || index + 1,
+                        generation: row['Generation'] || 'Gen 3',
+                        fullName: row['Full Name'] || 'Unknown',
+                        role: row['Role / Relationship'] || 'Member',
+                        branch: row['Branch'] || 'General',
+                        parents: row['Parents'] || '',
+                        spouse: row['Spouse'] || '',
+                        dob: row['Date of Birth'] || '',
+                        dod: row['Death Date'] || '',
+                        bio: `Imported from Excel backup.`
+                    }));
+
+                    saveData();
+                    renderDirectory();
+                    alert(`Successfully imported ${members.length} members!`);
                 } catch(err) {
                     alert("Error reading Excel file.");
                 }
@@ -516,6 +595,8 @@
             a.download = "ndambuki_family_backup.json";
             a.click();
         }
+
+        renderDirectory();
     </script>
 </body>
 </html>
