@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Ndambuki Family Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS for Excel Import Support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Firebase SDKs for Real-Time Cloud Sync -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --earth-dark: #4A3525;
+            --earth-hover: #38271b;
+            --earth-accent: #D4AF37;
+            --bg-cream: #F9F6F0;
+            --surface-white: #FFFFFF;
+            --text-main: #2C221E;
+            --text-muted: #665c56;
+            --border-light: #E5DBCD;
+            --shadow: 0 4px 20px rgba(74, 53, 37, 0.08);
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-cream); color: var(--text-main); line-height: 1.6; }
+
+        header { background-color: var(--earth-dark); color: white; padding: 2.5rem 1rem; text-align: center; box-shadow: var(--shadow); border-bottom: 3px solid var(--earth-accent); }
+        header h1 { font-family: 'Cinzel', serif; font-size: 2.2rem; font-weight: 700; color: var(--earth-accent); margin-bottom: 0.3rem; }
+        header p { font-size: 1rem; opacity: 0.9; font-weight: 400; }
+
+        nav { background: var(--earth-dark); border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 100; display: flex; justify-content: center; gap: 0.5rem; padding: 0.6rem; overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        nav::-webkit-scrollbar { display: none; }
+        nav button { background: transparent; border: none; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.85rem; font-weight: 600; color: #E5DBCD; cursor: pointer; padding: 0.5rem 1rem; border-radius: 8px; white-space: nowrap; transition: all 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+        nav button:hover { background: rgba(255,255,255,0.1); color: white; }
+        nav button.active { background: var(--earth-accent); color: var(--earth-dark); font-weight: 700; }
+
+        .container { max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem; }
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        .controls-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; background: var(--surface-white); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border-light); box-shadow: var(--shadow); }
+        .search-box { flex: 1; min-width: 250px; position: relative; }
+        .search-box i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-box input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.8rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem; outline: none; background: #FAF8F5; }
+        .search-box input:focus { background: white; border-color: var(--earth-dark); }
+
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; width: 100%; sm:width: auto; }
+        .btn { background: var(--earth-dark); color: white; border: none; padding: 0.75rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem; flex: 1; sm:flex: none; }
+        .btn:hover { background: var(--earth-hover); }
+        .btn-secondary { background: var(--earth-accent); color: var(--earth-dark); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.2rem; }
+        .card { background: var(--surface-white); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border-light); box-shadow: var(--shadow); display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s; border-top: 4px solid var(--earth-dark); }
+        .card:hover { transform: translateY(-2px); }
+        .card-img { height: 160px; background: #EFE9DE; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 2.5rem; position: relative; overflow: hidden; }
+        .card-img img { width: 100%; height: 100%; object-fit: cover; }
+        .badge { position: absolute; top: 10px; right: 10px; background: rgba(74,53,37,0.85); color: white; padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .card-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .card-title { font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.2rem; }
+        .card-sub { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .card-meta { font-size: 0.8rem; color: var(--earth-dark); border-top: 1px solid var(--border-light); padding-top: 0.5rem; margin-top: 0.5rem; }
+
+        .tree-container { background: var(--surface-white); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border-light); box-shadow: var(--shadow); }
+        .gen-group { margin-bottom: 2rem; }
+        .gen-title { font-family: 'Cinzel', serif; font-size: 1.2rem; font-weight: 700; color: var(--earth-dark); border-bottom: 2px solid var(--border-light); padding-bottom: 0.4rem; margin-bottom: 1rem; }
+        .tree-nodes { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+        .tree-node { background: var(--surface-white); border: 1px solid var(--border-light); padding: 0.8rem; border-radius: 8px; min-width: 200px; cursor: pointer; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(44,34,30,0.6); backdrop-filter: blur(3px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--surface-white); width: 100%; max-width: 550px; border-radius: var(--radius); overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.25); max-height: 90vh; display: flex; flex-direction: column; }
+        .modal-header { background: var(--earth-dark); color: white; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { font-family: 'Cinzel', serif; font-size: 1.2rem; }
+        .modal-close { background: none; border: none; color: white; font-size: 1.4rem; cursor: pointer; }
+        .modal-body { padding: 1.25rem; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 0.75rem 1.25rem; background: #FAF8F5; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.82rem; color: var(--earth-dark); }
+        .form-control { width: 100%; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.95rem; background: #FAF8F5; outline: none; }
+        .form-control:focus { background: white; border-color: var(--earth-dark); }
+
+        #syncToast { position: fixed; bottom: 15px; right: 15px; background: var(--earth-dark); color: var(--earth-accent); padding: 0.6rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 2000; align-items: center; gap: 0.4rem; border: 1px solid var(--earth-accent); }
+
+        footer { text-align: center; padding: 2.5rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-light); margin-top: 3rem; background: var(--surface-white); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>The Ndambuki Family</h1>
+        <p>Real-Time Mobile Portal • Generations 1 to 5</p>
+    </header>
+
+    <nav>
+        <button class="active" onclick="switchTab('directory', event)"><i class="fa-solid fa-users"></i> Directory</button>
+        <button onclick="switchTab('tree', event)"><i class="fa-solid fa-sitemap"></i> Tree</button>
+        <button onclick="switchTab('roots', event)"><i class="fa-solid fa-seedling"></i> Roots</button>
+        <button onclick="switchTab('guestbook', event)"><i class="fa-solid fa-book"></i> Guestbook</button>
+    </nav>
+
+    <div class="container">
+
+        <!-- DIRECTORY -->
+        <div id="directory" class="section active">
+            <div class="controls-bar">
+                <div class="search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search relatives..." oninput="filterDirectory()">
+                </div>
+                <div class="btn-group">
+                    <input type="file" id="excelInput" accept=".xlsx, .xls" style="display:none;" onchange="importExcel(event)">
+                    <button class="btn btn-secondary" onclick="document.getElementById('excelInput').click()"><i class="fa-solid fa-file-excel"></i> Excel</button>
+                    <button class="btn" onclick="openAddModal()"><i class="fa-solid fa-user-plus"></i> Add Kin</button>
+                </div>
+            </div>
+            <div id="familyGrid" class="grid"></div>
+        </div>
+
+        <!-- TREE -->
+        <div id="tree" class="section">
+            <div class="controls-bar">
+                <h3 style="font-family: 'Cinzel', serif; font-size: 1rem; color: var(--earth-dark);">Multi-Generational Hierarchy</h3>
+                <button class="btn btn-secondary" onclick="exportData()"><i class="fa-solid fa-download"></i> Backup</button>
+            </div>
+            <div class="tree-container" id="treeContainer"></div>
+        </div>
+
+        <!-- ROOTS -->
+        <div id="roots" class="section">
+            <div style="background: var(--surface-white); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border-light); box-shadow: var(--shadow);">
+                <h2 style="font-family: 'Cinzel', serif; font-size: 1.2rem; font-weight: 700; color: var(--earth-dark); margin-bottom: 0.8rem;">Foundational Ancestors & Branches</h2>
+                <p style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-muted);">Descendants of Benjamin Ndambuki Watuma, Munovi, and Rebecca Ndunge (Gen 1)[cite: 1, 2].</p>
+                <div class="grid" id="rootsGrid"></div>
+            </div>
+        </div>
+
+        <!-- GUESTBOOK -->
+        <div id="guestbook" class="section">
+            <div style="background: var(--surface-white); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border-light); box-shadow: var(--shadow); margin-bottom: 1.5rem;">
+                <h3 style="font-family: 'Cinzel', serif; color: var(--earth-dark); margin-bottom: 0.8rem;">Family Note</h3>
+                <form onsubmit="addGuest(event)">
+                    <div class="form-group"><input type="text" id="gName" class="form-control" placeholder="Your Name" required></div>
+                    <div class="form-group"><textarea id="gMsg" class="form-control" rows="2" placeholder="Your message..." required></textarea></div>
+                    <button type="submit" class="btn" style="width: 100%;">Post Message</button>
+                </form>
+            </div>
+            <div id="guestGrid" class="grid"></div>
+        </div>
+
+    </div>
+
+    <!-- MEMBER MODAL -->
+    <div id="memberModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="mModalTitle">Details</h3>
+                <button class="modal-close" onclick="closeModal('memberModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="mModalBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="mEditBtn">Edit</button>
+                <button class="btn" onclick="closeModal('memberModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT MODAL -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="fModalTitle">Add Member</h3>
+                <button class="modal-close" onclick="closeModal('formModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="memberForm" onsubmit="saveMember(event)">
+                    <input type="hidden" id="editDocId">
+                    <div class="form-group"><label>Full Name</label><input type="text" id="fName" class="form-control" required></div>
+                    <div class="form-group"><label>Generation</label>
+                        <select id="fGen" class="form-control">
+                            <option value="Gen 1">Gen 1 (Founders)</option>
+                            <option value="Gen 2">Gen 2</option>
+                            <option value="Gen 3">Gen 3 (Branch Heads)</option>
+                            <option value="Gen 4">Gen 4 (Children)</option>
+                            <option value="Gen 5">Gen 5 (Grandchildren)</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Branch</label><input type="text" id="fBranch" class="form-control" placeholder="e.g. Mang'uu Branch"></div>
+                    <div class="form-group"><label>Role</label><input type="text" id="fRole" class="form-control" placeholder="e.g. Branch Head"></div>
+                    <div class="form-group"><label>Parents</label><input type="text" id="fParents" class="form-control" placeholder="Parents' names"></div>
+                    <div class="form-group"><label>Spouse</label><input type="text" id="fSpouse" class="form-control" placeholder="Spouse name"></div>
+                    <div class="form-group"><label>Date of Birth</label><input type="date" id="fDob" class="form-control"></div>
+                    <div class="form-group"><label>Date of Death</label><input type="date" id="fDod" class="form-control"></div>
+                    <div class="form-group"><label>Biography</label><textarea id="fBio" class="form-control" rows="2" placeholder="History..."></textarea></div>
+                    <div class="form-group"><label>Photo</label><input type="file" id="fPhoto" class="form-control" accept="image/*"></div>
+                    <button type="submit" class="btn" style="width: 100%;">Save to Cloud</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="syncToast"><i class="fa-solid fa-cloud"></i> Synced in real time</div>
+
+    <footer>
+        <p>&copy; 2026 The Ndambuki Family Mobile Portal</p>
+    </footer>
+
+    <script>
+        // TODO: Replace with your actual Firebase project config credentials
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let members = [];
+        let guestbook = [];
+
+        // Real-time listener for Members collection
+        db.collection("members").onSnapshot((snapshot) => {
+            members = [];
+            snapshot.forEach((doc) => {
+                members.push({ docId: doc.id, ...doc.data() });
+            });
+            renderDirectory();
+            if(document.getElementById('tree').classList.contains('active')) renderTree();
+            if(document.getElementById('roots').classList.contains('active')) renderRoots();
+            showSyncToast();
+        });
+
+        // Real-time listener for Guestbook collection
+        db.collection("guestbook").orderBy("date", "desc").onSnapshot((snapshot) => {
+            guestbook = [];
+            snapshot.forEach((doc) => {
+                guestbook.push(doc.data());
+            });
+            if(document.getElementById('guestbook').classList.contains('active')) renderGuest();
+        });
+
+        function showSyncToast() {
+            const toast = document.getElementById('syncToast');
+            toast.style.display = 'flex';
+            setTimeout(() => toast.style.display = 'none', 2000);
+        }
+
+        function switchTab(tabId, e) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if(e) e.currentTarget.classList.add('active');
+            if(tabId === 'directory') renderDirectory();
+            if(tabId === 'tree') renderTree();
+            if(tabId === 'roots') renderRoots();
+            if(tabId === 'guestbook') renderGuest();
+        }
+
+        function renderDirectory(list = members) {
+            const grid = document.getElementById('familyGrid');
+            grid.innerHTML = '';
+            if(list.length === 0) {
+                grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">Loading family members or database empty...</p>`;
+                return;
+            }
+            list.forEach(m => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => openMember(m.docId);
+                card.innerHTML = `
+                    <div class="card-img">
+                        ${m.photo ? `<img src="${m.photo}" alt="${m.fullName}">` : `<i class="fa-solid fa-user"></i>`}
+                        <div class="badge">${m.generation}</div>
+                    </div>
+                    <div class="card-body">
+                        <div>
+                            <div class="card-title">${m.fullName}</div>
+                            <div class="card-sub">${m.role || 'Member'} • ${m.branch || 'General'}</div>
+                            <div class="card-meta">
+                                <div><b>Parents:</b> ${m.parents || 'N/A'}</div>
+                                ${m.dob ? `<div><b>Born:</b> \${m.dob}</div>` : ''}
+                                ${m.dod ? `<div style="color: #c5221f;"><b>Passed:</b> \${m.dod}</div>` : ''}
+                            </div>
+                        </div>
+                        <div style="margin-top: 0.8rem; color: var(--earth-dark); font-size: 0.8rem; font-weight: 600;">View Profile &rarr;</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterDirectory() {
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+            const filtered = members.filter(m => 
+                m.fullName.toLowerCase().includes(q) || 
+                (m.branch && m.branch.toLowerCase().includes(q)) ||
+                (m.role && m.role.toLowerCase().includes(q)) ||
+                (m.generation && m.generation.toLowerCase().includes(q)) ||
+                (m.parents && m.parents.toLowerCase().includes(q))
+            );
+            renderDirectory(filtered);
+        }
+
+        function renderTree() {
+            const container = document.getElementById('treeContainer');
+            container.innerHTML = '';
+            ["Gen 1", "Gen 2", "Gen 3", "Gen 4", "Gen 5"].forEach(gen => {
+                const genMembers = members.filter(m => m.generation === gen);
+                if(genMembers.length === 0) return;
+                const group = document.createElement('div');
+                group.className = 'gen-group';
+                group.innerHTML = `<div class="gen-title">${gen} (${genMembers.length})</div>`;
+                const nodes = document.createElement('div');
+                nodes.className = 'tree-nodes';
+                genMembers.forEach(m => {
+                    const node = document.createElement('div');
+                    node.className = 'tree-node';
+                    node.onclick = () => openMember(m.docId);
+                    node.innerHTML = `
+                        <h4 style="font-size:0.9rem; font-weight:700;">${m.fullName}</h4>
+                        <p style="font-size:0.75rem; color:var(--text-muted);">${m.branch || ''}</p>
+                    `;
+                    nodes.appendChild(node);
+                });
+                group.appendChild(nodes);
+                container.appendChild(group);
+            });
+        }
+
+        function renderRoots() {
+            const grid = document.getElementById('rootsGrid');
+            const branches = [...new Set(members.map(m => m.branch))].filter(b => b);
+            grid.innerHTML = '';
+            branches.forEach(b => {
+                const count = members.filter(m => m.branch === b).length;
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<div class="card-body"><div class="card-title">${b}</div><div class="card-sub">${count} Members</div></div>`;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderGuest() {
+            const grid = document.getElementById('guestGrid');
+            grid.innerHTML = '';
+            guestbook.forEach(g => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<div class="card-body"><div class="card-title">${g.name}</div><div class="card-sub">${g.date}</div><p style="font-size:0.85rem; color:var(--text-muted);">${g.msg}</p></div>`;
+                grid.appendChild(card);
+            });
+        }
+
+        function addGuest(e) {
+            e.preventDefault();
+            const name = document.getElementById('gName').value;
+            const msg = document.getElementById('gMsg').value;
+            db.collection("guestbook").add({
+                name, msg, date: new Date().toISOString().split('T')[0]
+            }).then(() => {
+                document.getElementById('gName').value = '';
+                document.getElementById('gMsg').value = '';
+            });
+        }
+
+        function openMember(docId) {
+            const m = members.find(item => item.docId === docId);
+            if(!m) return;
+            document.getElementById('mModalTitle').innerText = m.fullName;
+            const children = members.filter(item => item.parents && item.parents.toLowerCase().includes(m.fullName.toLowerCase().split(' ')[0]));
+
+            document.getElementById('mModalBody').innerHTML = `
+                <div style="text-align: center; margin-bottom: 1rem;">
+                    ${m.photo ? `<img src="\${m.photo}" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid var(--earth-dark);" alt="\${m.fullName}">` : `<div style="font-size: 2.5rem; color: var(--earth-dark);"><i class="fa-solid fa-user-circle"></i></div>`}
+                </div>
+                <p><b>Generation:</b> ${m.generation}</p>
+                <p><b>Branch:</b> ${m.branch || 'N/A'}</p>
+                <p><b>Role:</b> ${m.role || 'Member'}</p>
+                <p><b>Parents:</b> ${m.parents || 'N/A'}</p>
+                <p><b>Spouse:</b> ${m.spouse || 'N/A'}</p>
+                ${m.dob ? `<p><b>Born:</b> \${m.dob}</p>` : ''}
+                ${m.dod ? `<p style="color: #c5221f;"><b>Passed:</b> \${m.dod}</p>` : ''}
+                <hr style="margin: 0.8rem 0; border:0; border-top:1px solid var(--border-light);">
+                <h4 style="font-family: 'Cinzel', serif; font-size:0.95rem; font-weight:700; color:var(--earth-dark);">Biography</h4>
+                <p style="background: #FAF8F5; padding: 0.8rem; border-radius: 6px; margin-top: 0.4rem; font-size:0.9rem;">${m.bio || 'No biography written yet.'}</p>
+                
+                ${children.length > 0 ? `
+                    <h4 style="font-family: 'Cinzel', serif; font-size:0.95rem; font-weight:700; color:var(--earth-dark); margin-top: 0.8rem;">Children (\${children.length})</h4>
+                    <ul style="padding-left: 1.2rem; margin-top: 0.2rem; font-size: 0.9rem;">\${children.map(c => `<li><a href="#" onclick="openMember('${c.docId}'); return false;">${c.fullName}</a></li>`).join('')}</ul>
+                ` : ''}
+            `;
+            document.getElementById('mEditBtn').onclick = () => openEdit(m.docId);
+            document.getElementById('memberModal').classList.add('active');
+        }
+
+        function openAddModal() {
+            document.getElementById('fModalTitle').innerText = "Add Family Member";
+            document.getElementById('memberForm').reset();
+            document.getElementById('editDocId').value = '';
+            document.getElementById('formModal').classList.add('active');
+        }
+
+        function openEdit(docId) {
+            closeModal('memberModal');
+            const m = members.find(item => item.docId === docId);
+            if(!m) return;
+            document.getElementById('fModalTitle').innerText = "Edit Member";
+            document.getElementById('editDocId').value = m.docId;
+            document.getElementById('fName').value = m.fullName || '';
+            document.getElementById('fGen').value = m.generation || 'Gen 3';
+            document.getElementById('fBranch').value = m.branch || '';
+            document.getElementById('fRole').value = m.role || '';
+            document.getElementById('fParents').value = m.parents || '';
+            document.getElementById('fSpouse').value = m.spouse || '';
+            document.getElementById('fDob').value = m.dob || '';
+            document.getElementById('fDod').value = m.dod || '';
+            document.getElementById('fBio').value = m.bio || '';
+            document.getElementById('formModal').classList.add('active');
+        }
+
+        function saveMember(e) {
+            e.preventDefault();
+            const docId = document.getElementById('editDocId').value;
+            const fileInput = document.getElementById('fPhoto');
+
+            const saveToFirestore = (photoUrl) => {
+                const data = {
+                    fullName: document.getElementById('fName').value,
+                    generation: document.getElementById('fGen').value,
+                    branch: document.getElementById('fBranch').value,
+                    role: document.getElementById('fRole').value,
+                    parents: document.getElementById('fParents').value,
+                    spouse: document.getElementById('fSpouse').value,
+                    dob: document.getElementById('fDob').value,
+                    dod: document.getElementById('fDod').value,
+                    bio: document.getElementById('fBio').value,
+                    photo: photoUrl || (docId ? members.find(m => m.docId == docId).photo : null)
+                };
+
+                if(docId) {
+                    db.collection("members").doc(docId).update(data).then(() => {
+                        closeModal('formModal');
+                    });
+                } else {
+                    db.collection("members").add(data).then(() => {
+                        closeModal('formModal');
+                    });
+                }
+            };
+
+            if(fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => saveToFirestore(e.target.result);
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                saveToFirestore(null);
+            }
+        }
+
+        function importExcel(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheet];
+                    const jsonRows = XLSX.utils.sheet_to_json(worksheet);
+
+                    const batch = db.batch();
+                    jsonRows.forEach((row) => {
+                        const ref = db.collection("members").doc();
+                        batch.set(ref, {
+                            generation: row['Generation'] || 'Gen 3',
+                            fullName: row['Full Name'] || 'Unknown',
+                            role: row['Role / Relationship'] || 'Member',
+                            branch: row['Branch'] || 'General',
+                            parents: row['Parents'] || '',
+                            spouse: row['Spouse'] || '',
+                            dob: row['Date of Birth'] || '',
+                            dod: row['Death Date'] || '',
+                            bio: `Imported from Excel backup.`
+                        });
+                    });
+                    batch.commit().then(() => {
+                        alert(`Successfully imported ${jsonRows.length} members to Firebase Cloud in real time!`);
+                    });
+                } catch(err) {
+                    alert("Error reading Excel file.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(members, null, 2));
+            const a = document.createElement('a');
+            a.href = dataStr;
+            a.download = "ndambuki_family_backup.json";
+            a.click();
+        }
+    </script>
+</body>
+</html>
