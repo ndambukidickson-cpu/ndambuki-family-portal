@@ -6,6 +6,7 @@
     <title>The Ndambuki Family Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS Library for Excel Read & Write -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -110,7 +111,7 @@
                 </div>
                 <div class="btn-group">
                     <input type="file" id="excelInput" accept=".xlsx, .xls" style="display:none;" onchange="importExcel(event)">
-                    <button class="btn btn-secondary" onclick="document.getElementById('excelInput').click()"><i class="fa-solid fa-file-excel"></i> Excel</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('excelInput').click()"><i class="fa-solid fa-file-excel"></i> Upload Excel</button>
                     <button class="btn" onclick="openAddModal()"><i class="fa-solid fa-user-plus"></i> Add Kin</button>
                 </div>
             </div>
@@ -121,7 +122,10 @@
         <div id="tree" class="section">
             <div class="controls-bar">
                 <h3 style="font-family: 'Cinzel', serif; font-size: 1rem; color: var(--earth-dark);">Hierarchy Tree</h3>
-                <button class="btn btn-secondary" onclick="exportData()"><i class="fa-solid fa-download"></i> Backup</button>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="exportExcel()"><i class="fa-solid fa-file-excel"></i> Download Excel</button>
+                    <button class="btn btn-secondary" onclick="exportData()"><i class="fa-solid fa-download"></i> Backup JSON</button>
+                </div>
             </div>
             <div class="tree-container" id="treeContainer"></div>
         </div>
@@ -326,17 +330,17 @@
 
         let members = defaultMembers;
         try {
-            const saved = localStorage.getItem('ndambuki_members_v9');
+            const saved = localStorage.getItem('ndambuki_members_v10');
             if (saved) members = JSON.parse(saved);
         } catch(e) {}
 
-        let guestbook = JSON.parse(localStorage.getItem('ndambuki_guestbook_v9')) || [
+        let guestbook = JSON.parse(localStorage.getItem('ndambuki_guestbook_v10')) || [
             { name: "Dickson Ndambuki", msg: "Welcome to our family portal!", date: "2026-10-21" }
         ];
 
         function saveData() {
-            localStorage.setItem('ndambuki_members_v9', JSON.stringify(members));
-            localStorage.setItem('ndambuki_guestbook_v9', JSON.stringify(guestbook));
+            localStorage.setItem('ndambuki_members_v10', JSON.stringify(members));
+            localStorage.setItem('ndambuki_guestbook_v10', JSON.stringify(guestbook));
             showToast();
         }
 
@@ -462,7 +466,6 @@
             const m = members.find(item => item.id === id);
             if(!m) return;
             document.getElementById('mModalTitle').innerText = m.fullName;
-            const children = members.filter(item => item.parents && item.parents.toLowerCase().includes(m.fullName.toLowerCase().split(' ')[0]));
 
             document.getElementById('mModalBody').innerHTML = `
                 <div style="text-align: center; margin-bottom: 1rem;">
@@ -549,6 +552,7 @@
             }
         }
 
+        // Excel Import (Upload)
         function importExcel(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -571,17 +575,38 @@
                         spouse: row['Spouse'] || '',
                         dob: row['Date of Birth'] || '',
                         dod: row['Death Date'] || '',
-                        bio: `Imported from Excel backup.`
+                        bio: row['Biography'] || `Imported from Excel.`
                     }));
 
                     saveData();
                     renderDirectory();
-                    alert(`Successfully imported ${members.length} members!`);
+                    alert(`Successfully imported ${members.length} members from Excel!`);
                 } catch(err) {
-                    alert("Error reading Excel file.");
+                    alert("Error reading Excel file. Please ensure it's a valid spreadsheet.");
                 }
             };
             reader.readAsArrayBuffer(file);
+        }
+
+        // Excel Export (Download)
+        function exportExcel() {
+            const exportDataRows = members.map(m => ({
+                'ID': m.id,
+                'Full Name': m.fullName,
+                'Generation': m.generation,
+                'Branch': m.branch,
+                'Role / Relationship': m.role,
+                'Parents': m.parents,
+                'Spouse': m.spouse,
+                'Date of Birth': m.dob,
+                'Death Date': m.dod,
+                'Biography': m.bio
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportDataRows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Family Members");
+            XLSX.writeFile(workbook, "ndambuki_family_tree.xlsx");
         }
 
         function closeModal(modalId) {
