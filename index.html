@@ -9,6 +9,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Firebase SDKs (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --earth-dark: #4A3525;
@@ -113,7 +118,7 @@
                     <button class="btn" onclick="openAddModal()"><i class="fa-solid fa-user-plus"></i> Add</button>
                 </div>
             </div>
-            <div id="familyGrid" class="grid"><p style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted);">Loading family members...</p></div>
+            <div id="familyGrid" class="grid"><p style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted);">Connecting to cloud database...</p></div>
         </div>
 
         <!-- TREE -->
@@ -193,46 +198,75 @@
                     <div class="form-group"><label>Date of Death</label><input type="date" id="fDod" class="form-control"></div>
                     <div class="form-group"><label>Biography</label><textarea id="fBio" class="form-control" rows="2" placeholder="History..."></textarea></div>
                     <div class="form-group"><label>Photo</label><input type="file" id="fPhoto" class="form-control" accept="image/*"></div>
-                    <button type="submit" class="btn" style="width: 100%;">Save Member</button>
+                    <button type="submit" class="btn" style="width: 100%;">Save to Cloud</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <div id="saveToast"><i class="fa-solid fa-cloud"></i> Saved locally</div>
+    <div id="saveToast"><i class="fa-solid fa-cloud"></i> Synced to Cloud</div>
 
     <footer>
         <p>&copy; 2026 The Ndambuki Family Mobile Portal</p>
     </footer>
 
     <script>
-        let members = [];
-        let guestbook = JSON.parse(localStorage.getItem('ndambuki_guestbook_v13')) || [
-            { name: "Dickson Ndambuki", msg: "Welcome to our family portal!", date: "2026-10-21" }
-        ];
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdYZ894NFkmyUITzUI6_VUeTTujUAF8qI",
+            authDomain: "ndambuki-family.firebaseapp.com",
+            projectId: "ndambuki-family",
+            storageBucket: "ndambuki-family.firebasestorage.app",
+            messagingSenderId: "207140044834",
+            appId: "1:207140044834:web:cf1cbf45c1a57986ee4a7b",
+            measurementId: "G-LKC6FN6ERG"
+        };
 
-        async function initApp() {
-            const saved = localStorage.getItem('ndambuki_members_v13');
-            if (saved) {
-                members = JSON.parse(saved);
-                renderDirectory();
-            } else {
-                try {
-                    const response = await fetch('members.json');
-                    members = await response.json();
-                    saveData(false);
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let members = [];
+        let guestbook = [];
+
+        function initApp() {
+            db.collection("members").onSnapshot((snapshot) => {
+                members = [];
+                snapshot.forEach((doc) => {
+                    members.push({ id: doc.id, ...doc.data() });
+                });
+                
+                if (members.length === 0) {
+                    seedInitialData();
+                } else {
                     renderDirectory();
-                } catch (e) {
-                    members = [];
-                    document.getElementById('familyGrid').innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #c5221f; padding: 2rem;">Please upload your members.json or Excel file.</p>`;
                 }
-            }
+            }, (error) => {
+                console.error("Firestore error: ", error);
+            });
+
+            db.collection("guestbook").orderBy("date", "desc").onSnapshot((snapshot) => {
+                guestbook = [];
+                snapshot.forEach((doc) => {
+                    guestbook.push(doc.data());
+                });
+                renderGuest();
+            });
         }
 
-        function saveData(toast = true) {
-            localStorage.setItem('ndambuki_members_v13', JSON.stringify(members));
-            localStorage.setItem('ndambuki_guestbook_v13', JSON.stringify(guestbook));
-            if(toast) showToast();
+        async function seedInitialData() {
+            try {
+                const response = await fetch('members.json');
+                const defaultMembers = await response.json();
+                const batch = db.batch();
+                defaultMembers.forEach(m => {
+                    const docRef = db.collection("members").doc(String(m.id));
+                    batch.set(docRef, m);
+                });
+                await batch.commit();
+            } catch (e) {
+                console.log("No initial JSON found, database is empty.");
+                renderDirectory();
+            }
         }
 
         function showToast() {
@@ -252,15 +286,12 @@
             if(tabId === 'guestbook') renderGuest();
         }
 
-        // Helper to cleanly parse and keep the inputted date string exact without timezone shifting
         function formatDateDisplay(dateStr) {
             if (!dateStr) return '';
-            // If it's stored as YYYY-MM-DD, extract components directly to avoid time zone alterations
             const parts = dateStr.split('T')[0].split('-');
             if (parts.length === 3) {
                 const [year, month, day] = parts;
                 const dateObj = new Date(year, month - 1, day);
-                // Check if valid date
                 if (!isNaN(dateObj)) {
                     return dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
                 }
@@ -366,19 +397,22 @@
             });
         }
 
-        function addGuest(e) {
+        async function addGuest(e) {
             e.preventDefault();
             const name = document.getElementById('gName').value;
             const msg = document.getElementById('gMsg').value;
-            guestbook.unshift({ name, msg, date: new Date().toISOString().split('T')[0] });
-            saveData(true);
-            renderGuest();
+            await db.collection("guestbook").add({
+                name,
+                msg,
+                date: new Date().toISOString().split('T')[0]
+            });
             document.getElementById('gName').value = '';
             document.getElementById('gMsg').value = '';
+            showToast();
         }
 
         function openMember(id) {
-            const m = members.find(item => item.id === id);
+            const m = members.find(item => item.id == id);
             if(!m) return;
             
             const formattedDob = formatDateDisplay(m.dob);
@@ -413,7 +447,7 @@
 
         function openEdit(id) {
             closeModal('memberModal');
-            const m = members.find(item => item.id === id);
+            const m = members.find(item => item.id == id);
             if(!m) return;
             document.getElementById('fModalTitle').innerText = "Edit Member";
             document.getElementById('editId').value = m.id;
@@ -429,14 +463,15 @@
             document.getElementById('formModal').classList.add('active');
         }
 
-        function saveMember(e) {
+        async function saveMember(e) {
             e.preventDefault();
             const id = document.getElementById('editId').value;
             const fileInput = document.getElementById('fPhoto');
 
-            const save = (photoUrl) => {
+            const saveToCloud = async (photoUrl) => {
+                const docId = id ? String(id) : String(Date.now());
                 const data = {
-                    id: id ? parseInt(id) : Date.now(),
+                    id: docId,
                     fullName: document.getElementById('fName').value,
                     generation: document.getElementById('fGen').value,
                     branch: document.getElementById('fBranch').value,
@@ -446,35 +481,28 @@
                     dob: document.getElementById('fDob').value,
                     dod: document.getElementById('fDod').value,
                     bio: document.getElementById('fBio').value,
-                    photo: photoUrl || (id ? members.find(m => m.id == id).photo : null)
+                    photo: photoUrl || (id ? (members.find(m => m.id == id)?.photo || null) : null)
                 };
 
-                if(id) {
-                    const idx = members.findIndex(m => m.id == id);
-                    if(idx !== -1) members[idx] = data;
-                } else {
-                    members.push(data);
-                }
-
-                saveData(true);
+                await db.collection("members").doc(docId).set(data, { merge: true });
+                showToast();
                 closeModal('formModal');
-                renderDirectory();
             };
 
             if(fileInput.files && fileInput.files[0]) {
                 const reader = new FileReader();
-                reader.onload = (e) => save(e.target.result);
+                reader.onload = (e) => saveToCloud(e.target.result);
                 reader.readAsDataURL(fileInput.files[0]);
             } else {
-                save(null);
+                saveToCloud(null);
             }
         }
 
-        function importExcel(e) {
+        async function importExcel(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
@@ -482,22 +510,25 @@
                     const worksheet = workbook.Sheets[firstSheet];
                     const jsonRows = XLSX.utils.sheet_to_json(worksheet);
 
-                    members = jsonRows.map((row, index) => ({
-                        id: row['ID'] || index + 1,
-                        generation: row['Generation'] || 'Gen 3',
-                        fullName: row['Full Name'] || 'Unknown',
-                        role: row['Role / Relationship'] || 'Member',
-                        branch: row['Branch'] || 'General',
-                        parents: row['Parents'] || '',
-                        spouse: row['Spouse'] || '',
-                        dob: row['Date of Birth'] ? String(row['Date of Birth']).split('T')[0] : '',
-                        dod: row['Death Date'] ? String(row['Death Date']).split('T')[0] : '',
-                        bio: row['Biography'] || `Imported from Excel.`
-                    }));
-
-                    saveData(true);
-                    renderDirectory();
-                    alert(`Successfully imported ${members.length} members!`);
+                    const batch = db.batch();
+                    jsonRows.forEach((row, index) => {
+                        const docId = String(row['ID'] || index + 1);
+                        const docRef = db.collection("members").doc(docId);
+                        batch.set(docRef, {
+                            id: docId,
+                            generation: row['Generation'] || 'Gen 3',
+                            fullName: row['Full Name'] || 'Unknown',
+                            role: row['Role / Relationship'] || 'Member',
+                            branch: row['Branch'] || 'General',
+                            parents: row['Parents'] || '',
+                            spouse: row['Spouse'] || '',
+                            dob: row['Date of Birth'] ? String(row['Date of Birth']).split('T')[0] : '',
+                            dod: row['Death Date'] ? String(row['Death Date']).split('T')[0] : '',
+                            bio: row['Biography'] || `Imported from Excel.`
+                        });
+                    });
+                    await batch.commit();
+                    alert(`Successfully synced ${jsonRows.length} members to the cloud!`);
                 } catch(err) {
                     alert("Error reading Excel file.");
                 }
