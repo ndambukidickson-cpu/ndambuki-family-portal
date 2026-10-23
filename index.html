@@ -211,7 +211,6 @@
     </footer>
 
     <script>
-        // Your Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBdYZ894NFkmyUITzUI6_VUeTTujUAF8qI",
             authDomain: "ndambuki-family.firebaseapp.com",
@@ -238,6 +237,7 @@
                 if (members.length === 0) {
                     seedInitialData();
                 } else {
+                    sortMembers();
                     renderDirectory();
                 }
             }, (error) => {
@@ -269,6 +269,35 @@
             }
         }
 
+        // Helper to get Branch Head's date of birth for sorting hierarchy
+        function getBranchHeadDob(branchName) {
+            if (!branchName) return '9999-12-31';
+            const head = members.find(m => m.branch === branchName && (m.role && m.role.toLowerCase().includes('branch head')));
+            return head && head.dob ? head.dob : '9999-12-31';
+        }
+
+        // Sorting function: Gen 1 -> Gen 5, then sorted by Branch Head's Date of Birth
+        function sortMembers() {
+            members.sort((a, b) => {
+                const genA = parseInt((a.generation || "Gen 3").replace("Gen ", "")) || 3;
+                const genB = parseInt((b.generation || "Gen 3").replace("Gen ", "")) || 3;
+
+                if (genA !== genB) {
+                    return genA - genB;
+                }
+
+                // Within the same generation, sort by Branch Head's DOB
+                const dobA = getBranchHeadDob(a.branch);
+                const dobB = getBranchHeadDob(b.branch);
+                if (dobA !== dobB) {
+                    return dobA.localeCompare(dobB);
+                }
+
+                // Fallback to individual DOB if branch heads match
+                return (a.dob || '9999-12-31').localeCompare(b.dob || '9999-12-31');
+            });
+        }
+
         function showToast() {
             const toast = document.getElementById('saveToast');
             toast.style.display = 'block';
@@ -280,7 +309,7 @@
             document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             if(e) e.currentTarget.classList.add('active');
-            if(tabId === 'directory') renderDirectory();
+            if(tabId === 'directory') { sortMembers(); renderDirectory(); }
             if(tabId === 'tree') renderTree();
             if(tabId === 'roots') renderRoots();
             if(tabId === 'guestbook') renderGuest();
