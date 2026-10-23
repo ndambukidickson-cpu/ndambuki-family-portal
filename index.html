@@ -207,13 +207,12 @@
 
     <script>
         let members = [];
-        let guestbook = JSON.parse(localStorage.getItem('ndambuki_guestbook_v12')) || [
+        let guestbook = JSON.parse(localStorage.getItem('ndambuki_guestbook_v13')) || [
             { name: "Dickson Ndambuki", msg: "Welcome to our family portal!", date: "2026-10-21" }
         ];
 
-        // Load data instantly from localStorage, fallback to members.json
         async function initApp() {
-            const saved = localStorage.getItem('ndambuki_members_v12');
+            const saved = localStorage.getItem('ndambuki_members_v13');
             if (saved) {
                 members = JSON.parse(saved);
                 renderDirectory();
@@ -231,8 +230,8 @@
         }
 
         function saveData(toast = true) {
-            localStorage.setItem('ndambuki_members_v12', JSON.stringify(members));
-            localStorage.setItem('ndambuki_guestbook_v12', JSON.stringify(guestbook));
+            localStorage.setItem('ndambuki_members_v13', JSON.stringify(members));
+            localStorage.setItem('ndambuki_guestbook_v13', JSON.stringify(guestbook));
             if(toast) showToast();
         }
 
@@ -253,6 +252,22 @@
             if(tabId === 'guestbook') renderGuest();
         }
 
+        // Helper to cleanly parse and keep the inputted date string exact without timezone shifting
+        function formatDateDisplay(dateStr) {
+            if (!dateStr) return '';
+            // If it's stored as YYYY-MM-DD, extract components directly to avoid time zone alterations
+            const parts = dateStr.split('T')[0].split('-');
+            if (parts.length === 3) {
+                const [year, month, day] = parts;
+                const dateObj = new Date(year, month - 1, day);
+                // Check if valid date
+                if (!isNaN(dateObj)) {
+                    return dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                }
+            }
+            return dateStr;
+        }
+
         function renderDirectory(list = members) {
             const grid = document.getElementById('familyGrid');
             grid.innerHTML = '';
@@ -264,6 +279,10 @@
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.onclick = () => openMember(m.id);
+                
+                const formattedDob = formatDateDisplay(m.dob);
+                const formattedDod = formatDateDisplay(m.dod);
+
                 card.innerHTML = `
                     <div class="card-img">
                         ${m.photo ? `<img src="${m.photo}" alt="${m.fullName}">` : `<i class="fa-solid fa-user"></i>`}
@@ -275,8 +294,8 @@
                             <div class="card-sub">${m.role || 'Member'} • ${m.branch || 'General'}</div>
                             <div class="card-meta">
                                 <div><b>Parents:</b> ${m.parents || 'N/A'}</div>
-                                ${m.dob ? `<div><b>Born:</b> ${m.dob}</div>` : ''}
-                                ${m.dod ? `<div style="color: #c5221f;"><b>Passed:</b> ${m.dod}</div>` : ''}
+                                ${formattedDob ? `<div><b>Born:</b> ${formattedDob}</div>` : ''}
+                                ${formattedDod ? `<div style="color: #c5221f;"><b>Passed:</b> ${formattedDod}</div>` : ''}
                             </div>
                         </div>
                         <div style="margin-top: 0.5rem; color: var(--earth-dark); font-size: 0.75rem; font-weight: 600;">View Profile &rarr;</div>
@@ -361,6 +380,10 @@
         function openMember(id) {
             const m = members.find(item => item.id === id);
             if(!m) return;
+            
+            const formattedDob = formatDateDisplay(m.dob);
+            const formattedDod = formatDateDisplay(m.dod);
+
             document.getElementById('mModalTitle').innerText = m.fullName;
             document.getElementById('mModalBody').innerHTML = `
                 <div style="text-align: center; margin-bottom: 0.8rem;">
@@ -371,8 +394,8 @@
                 <p><b>Role:</b> ${m.role || 'Member'}</p>
                 <p><b>Parents:</b> ${m.parents || 'N/A'}</p>
                 <p><b>Spouse:</b> ${m.spouse || 'N/A'}</p>
-                ${m.dob ? `<p><b>Born:</b> ${m.dob}</p>` : ''}
-                ${m.dod ? `<p style="color: #c5221f;"><b>Passed:</b> ${m.dod}</p>` : ''}
+                ${formattedDob ? `<p><b>Born:</b> ${formattedDob}</p>` : ''}
+                ${formattedDod ? `<p style="color: #c5221f;"><b>Passed:</b> ${formattedDod}</p>` : ''}
                 <hr style="margin: 0.6rem 0; border:0; border-top:1px solid var(--border-light);">
                 <h4 style="font-family: 'Cinzel', serif; font-size:0.85rem; font-weight:700; color:var(--earth-dark);">Biography</h4>
                 <p style="background: #FAF8F5; padding: 0.6rem; border-radius: 6px; margin-top: 0.3rem; font-size:0.82rem;">${m.bio || 'No biography written yet.'}</p>
@@ -400,8 +423,8 @@
             document.getElementById('fRole').value = m.role || '';
             document.getElementById('fParents').value = m.parents || '';
             document.getElementById('fSpouse').value = m.spouse || '';
-            document.getElementById('fDob').value = m.dob || '';
-            document.getElementById('fDod').value = m.dod || '';
+            document.getElementById('fDob').value = m.dob ? m.dob.split('T')[0] : '';
+            document.getElementById('fDod').value = m.dod ? m.dod.split('T')[0] : '';
             document.getElementById('fBio').value = m.bio || '';
             document.getElementById('formModal').classList.add('active');
         }
@@ -467,8 +490,8 @@
                         branch: row['Branch'] || 'General',
                         parents: row['Parents'] || '',
                         spouse: row['Spouse'] || '',
-                        dob: row['Date of Birth'] || '',
-                        dod: row['Death Date'] || '',
+                        dob: row['Date of Birth'] ? String(row['Date of Birth']).split('T')[0] : '',
+                        dod: row['Death Date'] ? String(row['Death Date']).split('T')[0] : '',
                         bio: row['Biography'] || `Imported from Excel.`
                     }));
 
@@ -491,8 +514,8 @@
                 'Role / Relationship': m.role,
                 'Parents': m.parents,
                 'Spouse': m.spouse,
-                'Date of Birth': m.dob,
-                'Death Date': m.dod,
+                'Date of Birth': m.dob || '',
+                'Death Date': m.dod || '',
                 'Biography': m.bio
             }));
 
