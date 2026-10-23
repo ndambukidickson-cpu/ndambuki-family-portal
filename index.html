@@ -224,7 +224,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Embedded Initial Members Dataset
         const fallbackMembers = [
             { "id": "1", "generation": "Gen 1", "fullName": "Benjamin Ndambuki Watuma", "role": "Patriarch / Family Head", "branch": "Foundational Ancestor", "parents": "Foundational Lineage", "spouse": "Munovi & Rebecca Ndunge", "dob": "1898-01-01", "dod": "1989-10-22", "bio": "Foundational patriarch of the Ndambuki family." },
             { "id": "2", "generation": "Gen 1", "fullName": "Munovi", "role": "Matriarch / Wife", "branch": "Foundational Ancestor", "parents": "Foundational Lineage", "spouse": "Benjamin Ndambuki Watuma", "dob": "", "dod": "", "bio": "Foundational matriarch." },
@@ -357,12 +356,10 @@
                     sortMembers();
                     renderDirectory();
                 } else {
-                    // Seed Firestore with the embedded fallback members if the cloud database is empty
                     seedInitialData();
                 }
             }, (error) => {
                 console.error("Firestore error: ", error);
-                // Fallback to local embedded data if offline/error
                 members = fallbackMembers;
                 sortMembers();
                 renderDirectory();
@@ -723,4 +720,3 @@
     </script>
 </body>
 </html>
-
