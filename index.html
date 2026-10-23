@@ -229,16 +229,16 @@
 
         function initApp() {
             db.collection("members").onSnapshot((snapshot) => {
-                members = [];
-                snapshot.forEach((doc) => {
-                    members.push({ id: doc.id, ...doc.data() });
-                });
-                
-                if (members.length === 0) {
-                    seedInitialData();
-                } else {
+                if (!snapshot.empty) {
+                    members = [];
+                    snapshot.forEach((doc) => {
+                        members.push({ id: doc.id, ...doc.data() });
+                    });
                     sortMembers();
                     renderDirectory();
+                } else {
+                    // Only seed if cloud collection is completely empty
+                    seedInitialData();
                 }
             }, (error) => {
                 console.error("Firestore error: ", error);
@@ -269,14 +269,12 @@
             }
         }
 
-        // Helper to get Branch Head's date of birth for sorting hierarchy
         function getBranchHeadDob(branchName) {
             if (!branchName) return '9999-12-31';
             const head = members.find(m => m.branch === branchName && (m.role && m.role.toLowerCase().includes('branch head')));
             return head && head.dob ? head.dob : '9999-12-31';
         }
 
-        // Sorting function: Gen 1 -> Gen 5, then sorted by Branch Head's Date of Birth
         function sortMembers() {
             members.sort((a, b) => {
                 const genA = parseInt((a.generation || "Gen 3").replace("Gen ", "")) || 3;
@@ -286,14 +284,12 @@
                     return genA - genB;
                 }
 
-                // Within the same generation, sort by Branch Head's DOB
                 const dobA = getBranchHeadDob(a.branch);
                 const dobB = getBranchHeadDob(b.branch);
                 if (dobA !== dobB) {
                     return dobA.localeCompare(dobB);
                 }
 
-                // Fallback to individual DOB if branch heads match
                 return (a.dob || '9999-12-31').localeCompare(b.dob || '9999-12-31');
             });
         }
